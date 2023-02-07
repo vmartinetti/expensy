@@ -9,44 +9,49 @@ import TableRow from '@mui/material/TableRow';
 import Title from './Title';
 import { getOrders } from '../services/orders-service';
 import { formatDate } from '../utils/helpers';
-import { API_URL } from '../config';
 import useFetch from '../hooks/use-fetch';
+import { gql, useQuery } from '@apollo/client'
 
 const Orders = (props) => {
   console.log(props)
   const {more} = props;
   const [orders, setOrders] = React.useState([]);
 
-  const {fetchData: fetchOrders, error, loading}  = useFetch()
-  React.useEffect(() => {
-    fetchOrders(`${API_URL}/orders`).then((orders) => {
-      console.log(orders)
-      setOrders(orders)
-    })
-    console.log("Orders useEffect")
-  }, [fetchOrders])
+  const GET_EXPENSES = gql`{
+    expenses {
+            id
+            concept
+            amount
+            createdAt
+            createdBy
+          }
+  }`;
+
+  const { loading, error, data } = useQuery(GET_EXPENSES);
+  if (loading) return 'Loading';
+  if (error) return `Error ${error.message}`;
+  console.log('data', data)
+  const expenses = data.expenses;
 
   return (
     <React.Fragment>
-      <Title>Recent Orders</Title>
+      <Title>Recent expenses</Title>
       <Table size="small">
         <TableHead>
           <TableRow>
             <TableCell>Date</TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Ship To</TableCell>
-            <TableCell>Payment Method</TableCell>
-            <TableCell align="right">Sale Amount</TableCell>
+            <TableCell align="right"> Amount</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {!loading ? orders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell>{formatDate(order.date)}</TableCell>
-              <TableCell>{order.name}</TableCell>
-              <TableCell>{order.shipTo}</TableCell>
-              <TableCell>{order.paymentMethod}</TableCell>
-              <TableCell align="right">{`$${order.amount}`}</TableCell>
+          {!loading ? expenses.map((expense) => (
+            <TableRow key={expense.id}>
+              <TableCell>{formatDate(expense.createdAt)}</TableCell>
+              <TableCell>{expense.concept}</TableCell>
+              <TableCell>{expense.createdBy}</TableCell>
+              <TableCell align="right">{`$${expense.amount}`}</TableCell>
             </TableRow>
           )) : 
           <TableRow>
